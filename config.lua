@@ -1,0 +1,3 @@
+Config = {}
+
+Config.Modelname = 'Blista'
