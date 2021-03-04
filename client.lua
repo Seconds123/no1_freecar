@@ -18,7 +18,7 @@ Citizen.CreateThread(function()
         local coords = GetEntityCoords(ped)
 
         if #(coords - claimCoords) < 5.0 then
-            ESX.Game.Utils.DrawText3D(claimCoords, "~y~Press ~g~[E] ~y~to claim free car!", 0.5, signpainter)
+            ESX.Game.Utils.DrawText3D(claimCoords, "~y~Press ~g~[E] ~y~to claim free car!", 0.5, 1)
 
             if IsControlJustReleased(0, 46) then
                 TriggerServerEvent('skull_freecar:claimFreeCar')
