@@ -15,7 +15,7 @@ AddEventHandler('skull_freecar:claimFreeCar', function()
 
             MySQL.Async.execute('INSERT INTO log_freecar (identifier) VALUES (@identifier)', {['@identifier'] = xPlayer.getIdentifier()})   
 
-            TriggerClientEvent('skull_freecar:spawnVehicle', src, Config.Modelname)
+            TriggerClientEvent('skull_freecar:spawnVehicle', src, src, Config.Modelname)
         end
     end)
 
@@ -26,21 +26,19 @@ AddEventHandler('skull_freecar:setVehicle', function (vehicleProps, playerID)
 	local _source = playerID
 	local xPlayer = ESX.GetPlayerFromId(_source)
 
-    MySQL.Async.execute('INSERT INTO owned_vehicles (owner, plate, vehicle, type, stored) VALUES (@owner, @plate, @vehicle, @type, @stored)',
-    {
-        ['@owner']   = xPlayer.identifier,
+	MySQL.Async.execute('INSERT INTO owned_vehicles (owner, plate, vehicle, type, stored) VALUES (@owner, @plate, @vehicle, @type,@stored)',
+	{
+		['@owner']   = xPlayer.identifier,
         ['@plate']   = vehicleProps.plate,
-        ['@vehicle'] = json.encode(vehicleProps),
         ['@type']    = 'car',
-        ['@stored']  = 1
-    }, function ()
+		['@vehicle'] = json.encode(vehicleProps),
+		['@stored']  = 1
+	}, function ()
         TriggerClientEvent('esx:showNotification', _source, string.format("You received a vehicle with plate number ~y~%s", string.upper(vehicleProps.plate)))
-    end)
-
+	end)
 end)
 
 RegisterServerEvent('skull_freecar:setGarage')
 AddEventHandler('skull_freecar:setGarage', function(plate)
-    MySQL.Async.execute("UPDATE owned_vehicles SET `stored` = '1' WHERE plate = @plate", {['@plate']  = plate})
+    MySQL.Async.execute("UPDATE owned_vehicles SET `stored` = '1', `fuel` = '100.0' WHERE plate = @plate", {['@plate']  = plate})
 end)
-

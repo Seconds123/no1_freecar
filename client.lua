@@ -18,24 +18,25 @@ Citizen.CreateThread(function()
         local coords = GetEntityCoords(ped)
 
         if #(coords - claimCoords) < 5.0 then
-            ESX.Game.Utils.DrawText3D(claimCoords, "~y~Press ~g~[E] ~y~to claim free car!", 0.5, 1)
+            ESX.Game.Utils.DrawText3D(claimCoords, "~y~Press ~g~[E] ~y~to claim free car!", 0.5, signpainter)
 
             if IsControlJustReleased(0, 46) then
                 TriggerServerEvent('skull_freecar:claimFreeCar')
             end
-        else
-			Citizen.Wait(500)
-		end
+        end
+
     end
 end)
 
 RegisterNetEvent('skull_freecar:spawnVehicle')
-AddEventHandler('skull_freecar:spawnVehicle', function(playerID)
+AddEventHandler('skull_freecar:spawnVehicle', function(playerID, model)
 	local playerPed = GetPlayerPed(-1)
 	local coords    = GetEntityCoords(playerPed)
+	local carExist  = false
 
-	ESX.Game.SpawnVehicle(Config.Modelname, coords, 0.0, function(vehicle) --get vehicle info
+	ESX.Game.SpawnVehicle(model, coords, 0.0, function(vehicle) --get vehicle info
 		if DoesEntityExist(vehicle) then
+			carExist = true
 			SetEntityVisible(vehicle, false, false)
 			SetEntityCollision(vehicle, false)
 			
