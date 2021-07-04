@@ -1,51 +1,96 @@
 ESX                           = nil
 
-local claimCoords = vector3(-57.63, -1096.88, 26.42)
-
 Citizen.CreateThread(function()
 	while ESX == nil do
 		TriggerEvent('esx:getSharedObject', function(obj) ESX = obj end)
 		Citizen.Wait(0)
 	end
-
 end)
+
+DrawText3Ds = function(x, y, z, text)
+	SetTextScale(0.35, 0.35)
+    SetTextFont(4)
+    SetTextProportional(1)
+    SetTextColour(255, 255, 255, 215)
+    SetTextEntry("STRING")
+    SetTextCentre(true)
+    AddTextComponentString(text)
+    SetDrawOrigin(x,y,z, 0)
+    DrawText(0.0, 0.0)
+    ClearDrawOrigin()
+end
 
 Citizen.CreateThread(function()
-    while true do
-        Citizen.Wait(0)
-        
-        local ped = PlayerPedId()
-        local coords = GetEntityCoords(ped)
+	while true do
+		local plyPed = GetPlayerPed(-1)
+		local plyCoords = GetEntityCoords(plyPed)
+		local inRange = false
+		local distance = #(plyCoords - Config.Locations["ClaimCoords"])
 
-        if #(coords - claimCoords) < 5.0 then
-            ESX.Game.Utils.DrawText3D(claimCoords, "~y~Press ~g~[E] ~y~to claim free car!", 0.5, 1)
+		if distance < 5 then
+			inRange = true
+			DrawMarker(2, Config.Locations["ClaimCoords"].x, Config.Locations["ClaimCoords"].y, Config.Locations["ClaimCoords"].z, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.3, 0.2, 0.15, 200, 0, 0, 222, false, false, false, true, false, false, false)
 
-            if IsControlJustReleased(0, 46) then
-                TriggerServerEvent('skull_freecar:claimFreeCar')
-            end
-        end
+			if distance < 2 then
+				DrawText3Ds(Config.Locations["ClaimCoords"].x, Config.Locations["ClaimCoords"].y, Config.Locations["ClaimCoords"].z+0.2, "~g~[E]~w~ - Claim Free Car")
 
-    end
+				if IsControlJustReleased(0, 38) then
+					TriggerServerEvent("no1_freecar:server:claimVehicle")
+				end
+			elseif distance < 5 then
+				DrawText3Ds(Config.Locations["ClaimCoords"].x, Config.Locations["ClaimCoords"].y, Config.Locations["ClaimCoords"].z+0.2, "Free Car")
+			end
+		end
+
+		if not inRange then
+			Citizen.Wait(2000)
+		end
+
+		Citizen.Wait(0)
+	end
 end)
 
-RegisterNetEvent('skull_freecar:spawnVehicle')
-AddEventHandler('skull_freecar:spawnVehicle', function(playerID, model)
-	local playerPed = GetPlayerPed(-1)
-	local coords    = GetEntityCoords(playerPed)
-	local carExist  = false
+AddEventHandler("no1_freecar:client:spawnClaimedVehicle", function()
+	local plyPed = GetPlayerPed(-1)
+	local plyCoords = GetEntityCoords(plyPed)
 
-	ESX.Game.SpawnVehicle(model, coords, 0.0, function(vehicle) --get vehicle info
-		if DoesEntityExist(vehicle) then
-			carExist = true
-			SetEntityVisible(vehicle, false, false)
-			SetEntityCollision(vehicle, false)
-			
-			local newPlate     = exports.esx_vehicleshop:GeneratePlate()
-			local vehicleProps = ESX.Game.GetVehicleProperties(vehicle)
-			vehicleProps.plate = newPlate
-            TriggerServerEvent('skull_freecar:setVehicle', vehicleProps, playerID)		
-            ESX.Game.DeleteVehicle(vehicle)
-            TriggerServerEvent('skull_freecar:setGarage', vehicleProps.plate)
-		end		
+	if not ESX.Game.IsSpawnPointClear(Config.Locations["SpawnCoords"], 5) then 
+		ESX.ShowNotification("Spawn point is not clear!")
+		return
+	end
+
+	LoadVehicleModel(Config.Vehicle["model"])
+
+	ESX.Game.SpawnVehicle(Config.Vehicle["model"], Config.Locations["SpawnCoords"], Config.Locations["SpawnCoords"].w, function(spawnedVehicle) 
+		if DoesEntityExist(spawnedVehicle) then
+			local plate = exports['esx_vehicleshop']:GeneratePlate()
+
+			SetVehicleNumberPlateText(spawnedVehicle, plate)
+			TaskWarpPedIntoVehicle(PlayerPedId(), spawnedVehicle, -1)
+
+			local vehicleProps = ESX.Game.GetVehicleProperties(spawnedVehicle)
+			TriggerServerEvent("no1_freecar:server:SetOwnedVehicle", plate, vehicleProps)
+		end
 	end)
 end)
+
+function LoadVehicleModel(vehicleModel)
+	vehicleModel = GetHashKey(vehicleModel)
+
+	if not HasModelLoaded(vehicleModel) then
+		RequestModel(vehicleModel)
+
+		BeginTextCommandBusyspinnerOn('STRING')
+		AddTextComponentSubstringPlayerName('Vehicle model is loading')
+		EndTextCommandBusyspinnerOn(4)
+
+		while not HasModelLoaded(vehicleModel) do
+			Citizen.Wait(0)
+			DisableAllControlActions(0)
+		end
+
+		BusyspinnerOff()
+	end
+end
+
+RegisterNetEvent("no1_freecar:client:spawnClaimedVehicle")
